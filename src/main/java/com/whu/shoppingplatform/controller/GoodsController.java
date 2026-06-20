@@ -1,0 +1,68 @@
+package com.whu.shoppingplatform.controller;
+
+import com.whu.shoppingplatform.dto.ApiResponse;
+import com.whu.shoppingplatform.entity.Goods;
+import com.whu.shoppingplatform.service.GoodsService;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/goods")
+public class GoodsController {
+
+    private final GoodsService goodsService;
+
+    public GoodsController(GoodsService goodsService) {
+        this.goodsService = goodsService;
+    }
+
+    @GetMapping
+    public ApiResponse<Map<String, Object>> listGoods(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String keyword) {
+        try {
+            Map<String, Object> result = goodsService.listGoods(keyword, page, size);
+            return ApiResponse.success(result);
+        } catch (RuntimeException e) {
+            return ApiResponse.error(400, e.getMessage());
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ApiResponse<Goods> getGoods(@PathVariable Long id) {
+        Goods goods = goodsService.getGoodsById(id);
+        if (goods == null) {
+            return ApiResponse.error(404, "商品不存在");
+        }
+        return ApiResponse.success(goods);
+    }
+
+    @PostMapping
+    public ApiResponse<Goods> createGoods(@RequestBody Map<String, Object> request) {
+        try {
+            String name = (String) request.get("name");
+            String description = (String) request.get("description");
+            BigDecimal price = request.get("price") != null ? new BigDecimal(request.get("price").toString()) : BigDecimal.ZERO;
+            String imageUrl = (String) request.get("imageUrl");
+            Integer stock = request.get("stock") != null ? Integer.parseInt(request.get("stock").toString()) : 0;
+
+            Goods goods = goodsService.createGoods(name, description, price, imageUrl, stock);
+            return ApiResponse.success("添加商品成功", goods);
+        } catch (RuntimeException e) {
+            return ApiResponse.error(400, e.getMessage());
+        }
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<Void> deleteGoods(@PathVariable Long id) {
+        try {
+            goodsService.deleteGoods(id);
+            return ApiResponse.success("删除商品成功", null);
+        } catch (RuntimeException e) {
+            return ApiResponse.error(400, e.getMessage());
+        }
+    }
+}

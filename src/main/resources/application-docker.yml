@@ -1,0 +1,21 @@
+# =====================================================
+# Docker 环境配置
+# 通过环境变量注入数据库连接信息
+# =====================================================
+server:
+  port: ${SERVER_PORT:8080}
+
+spring:
+  datasource:
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:abc123}
+    url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:shopping_platform}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  mapper-locations: classpath:mapper/*Mapper.xml
+  type-aliases-package: com.whu.shoppingplatform.entity
+
+logging:
+  level:
+    com.whu.shoppingplatform: debug

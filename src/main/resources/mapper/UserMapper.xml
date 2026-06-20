@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whu.shoppingplatform.mapper.UserMapper">
+
+    <resultMap id="UserResultMap" type="com.whu.shoppingplatform.entity.User">
+        <id property="id" column="id"/>
+        <result property="username" column="username"/>
+        <result property="password" column="password"/>
+        <result property="phone" column="phone"/>
+        <result property="email" column="email"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findByUsername" resultMap="UserResultMap">
+        SELECT id, username, password, phone, email, created_at, updated_at
+        FROM t_user
+        WHERE username = #{username}
+    </select>
+
+    <select id="findById" resultMap="UserResultMap">
+        SELECT id, username, password, phone, email, created_at, updated_at
+        FROM t_user
+        WHERE id = #{id}
+    </select>
+
+    <insert id="insert" parameterType="com.whu.shoppingplatform.entity.User" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_user (username, password, phone, email, created_at, updated_at)
+        VALUES (#{username}, #{password}, #{phone}, #{email}, #{createdAt}, #{updatedAt})
+    </insert>
+
+    <update id="update" parameterType="com.whu.shoppingplatform.entity.User">
+        UPDATE t_user
+        SET username = #{username},
+            password = #{password},
+            phone    = #{phone},
+            email    = #{email},
+            updated_at = #{updatedAt}
+        WHERE id = #{id}
+    </update>
+
+</mapper>

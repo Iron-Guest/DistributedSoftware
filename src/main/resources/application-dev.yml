@@ -1,0 +1,24 @@
+server:
+  #指定服务端口
+  port: 8080
+
+spring:
+  datasource:
+    #替换成MySQL账户
+    username: root
+    #替换成MySQL密码
+    password: abc123
+    #替换成数据库名
+    url: jdbc:mysql://localhost:3306/shopping_platform?useUnicode=true&characterEncoding=utf-8&useSSL=true&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  mapper-locations: classpath:mapper/*Mapper.xml
+  type-aliases-package: com.whu.shoppingplatform.entity
+
+#showSql
+logging:
+  level:
+    com:
+      example:
+        mapper : debug

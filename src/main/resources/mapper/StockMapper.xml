@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.whu.shoppingplatform.mapper.StockMapper">
+
+    <resultMap id="StockResultMap" type="com.whu.shoppingplatform.entity.Stock">
+        <id property="id" column="id"/>
+        <result property="goodsId" column="goods_id"/>
+        <result property="totalStock" column="total_stock"/>
+        <result property="lockedStock" column="locked_stock"/>
+        <result property="soldCount" column="sold_count"/>
+        <result property="version" column="version"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="findByGoodsId" resultMap="StockResultMap">
+        SELECT id, goods_id, total_stock, locked_stock, sold_count, version, updated_at
+        FROM t_stock
+        WHERE goods_id = #{goodsId}
+    </select>
+
+    <insert id="insert" parameterType="com.whu.shoppingplatform.entity.Stock" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO t_stock (goods_id, total_stock, locked_stock, sold_count, version, updated_at)
+        VALUES (#{goodsId}, #{totalStock}, 0, 0, 0, #{updatedAt})
+    </insert>
+
+    <update id="deductStock">
+        UPDATE t_stock
+        SET locked_stock = locked_stock + #{quantity},
+            version      = version + 1,
+            updated_at   = NOW()
+        WHERE goods_id = #{goodsId}
+          AND (total_stock - locked_stock - sold_count) >= #{quantity}
+          AND version = #{version}
+    </update>
+
+    <update id="rollbackStock">
+        UPDATE t_stock
+        SET locked_stock = locked_stock - #{quantity},
+            version      = version + 1,
+            updated_at   = NOW()
+        WHERE goods_id = #{goodsId}
+          AND locked_stock >= #{quantity}
+          AND version = #{version}
+    </update>
+
+    <delete id="deleteByGoodsId">
+        DELETE FROM t_stock WHERE goods_id = #{goodsId}
+    </delete>
+
+</mapper>
