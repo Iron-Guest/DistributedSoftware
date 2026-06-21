@@ -69,6 +69,10 @@ public class OrderService {
         return orderMapper.findById(id);
     }
 
+    public Order getOrderByOrderNo(String orderNo) {
+        return orderMapper.findByOrderNo(orderNo);
+    }
+
     public List<Order> listOrdersByUserId(Long userId) {
         return orderMapper.findByUserId(userId);
     }

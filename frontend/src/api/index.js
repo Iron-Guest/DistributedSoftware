@@ -1,8 +1,9 @@
 import axios from 'axios'
 
 const api = axios.create({
-  // 开发环境使用绝对路径，生产环境(Nginx反向代理)使用相对路径
-  baseURL: import.meta.env.DEV ? 'http://localhost:8080/api' : '/api',
+  // 开发环境: 通过 Nginx (80) 或直接连后端 (8081)
+  // 生产环境 (Nginx反向代理): 使用相对路径
+  baseURL: import.meta.env.DEV ? 'http://localhost/api' : '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

@@ -1,16 +1,46 @@
 # =====================================================
 # Docker 环境配置
-# 通过环境变量注入数据库连接信息
+# 通过环境变量注入数据库/Redis/ES 连接信息
 # =====================================================
 server:
   port: ${SERVER_PORT:8080}
 
 spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchDataAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.elasticsearch.ElasticsearchRepositoriesAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchRestClientAutoConfiguration
+      - org.springframework.boot.autoconfigure.elasticsearch.ReactiveElasticsearchClientAutoConfiguration
+  # 数据源 — 读写分离
   datasource:
-    username: ${MYSQL_USER:root}
-    password: ${MYSQL_PASSWORD:abc123}
-    url: jdbc:mysql://${MYSQL_HOST:mysql}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:shopping_platform}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
-    driver-class-name: com.mysql.cj.jdbc.Driver
+    master:
+      username: ${MYSQL_USER:root}
+      password: ${MYSQL_PASSWORD:abc123}
+      jdbc-url: jdbc:mysql://${MYSQL_MASTER_HOST:mysql-master}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:shopping_platform}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      driver-class-name: com.mysql.cj.jdbc.Driver
+    slave:
+      username: ${MYSQL_USER:root}
+      password: ${MYSQL_PASSWORD:abc123}
+      jdbc-url: jdbc:mysql://${MYSQL_SLAVE_HOST:mysql-slave}:${MYSQL_PORT:3306}/${MYSQL_DATABASE:shopping_platform}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # Redis 缓存
+  data:
+    redis:
+      host: ${REDIS_HOST:redis}
+      port: ${REDIS_PORT:6379}
+      timeout: 3000ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 4
+          max-wait: 3000ms
+    elasticsearch:
+      repositories:
+        enabled: false
 
 mybatis:
   mapper-locations: classpath:mapper/*Mapper.xml
@@ -19,3 +49,20 @@ mybatis:
 logging:
   level:
     com.whu.shoppingplatform: debug
+    com.whu.shoppingplatform.config.DataSourceRouter: debug
+    com.whu.shoppingplatform.config.ReadOnlyAspect: debug
+
+  # Kafka 消息队列
+  kafka:
+    enabled: true
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+    consumer:
+      group-id: seckill-group
+      enable-auto-commit: false
+      auto-offset-reset: earliest
+      max-poll-records: 10
+    producer:
+      acks: all
+      retries: 3
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer

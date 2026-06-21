@@ -7,6 +7,10 @@
 --   source E:/Codes/ShoppingPlatform/src/main/resources/init-db.sql;
 -- =====================================================
 
+-- 确保客户端使用 UTF-8 编码，防止中文乱码
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+
 -- =====================================================
 -- 1. 创建数据库
 -- =====================================================
@@ -92,10 +96,17 @@ CREATE INDEX idx_order_user_id  ON t_order(user_id);
 CREATE INDEX idx_order_goods_id ON t_order(goods_id);
 CREATE INDEX idx_order_status   ON t_order(status);
 CREATE INDEX idx_order_created  ON t_order(created_at);
+CREATE UNIQUE INDEX idx_order_user_goods ON t_order(user_id, goods_id);
 CREATE INDEX idx_stock_goods_id ON t_stock(goods_id);
 
 -- =====================================================
--- 7. 种子数据: 商品
+-- 7. 种子数据: 用户
+-- =====================================================
+INSERT INTO t_user (username, password, phone, email, created_at, updated_at) VALUES
+('admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVYQ', '13800000000', 'admin@test.com', NOW(), NOW());
+
+-- =====================================================
+-- 8. 种子数据: 商品
 -- =====================================================
 INSERT INTO t_goods (id, name, description, price, image_url, status) VALUES
 (1, 'iPhone 15 Pro Max 256GB',
@@ -139,7 +150,7 @@ INSERT INTO t_goods (id, name, description, price, image_url, status) VALUES
  1370.00, 'https://picsum.photos/seed/skii/400/300', 1);
 
 -- =====================================================
--- 8. 种子数据: 库存（与商品一一对应）
+-- 9. 种子数据: 库存（与商品一一对应）
 -- =====================================================
 INSERT INTO t_stock (goods_id, total_stock, locked_stock, sold_count, version) VALUES
 (1,  100, 0, 0, 0),

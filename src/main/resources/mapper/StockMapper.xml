@@ -18,6 +18,11 @@
         WHERE goods_id = #{goodsId}
     </select>
 
+    <select id="findAll" resultMap="StockResultMap">
+        SELECT id, goods_id, total_stock, locked_stock, sold_count, version, updated_at
+        FROM t_stock
+    </select>
+
     <insert id="insert" parameterType="com.whu.shoppingplatform.entity.Stock" useGeneratedKeys="true" keyProperty="id">
         INSERT INTO t_stock (goods_id, total_stock, locked_stock, sold_count, version, updated_at)
         VALUES (#{goodsId}, #{totalStock}, 0, 0, 0, #{updatedAt})
@@ -46,5 +51,15 @@
     <delete id="deleteByGoodsId">
         DELETE FROM t_stock WHERE goods_id = #{goodsId}
     </delete>
+
+    <update id="confirmSeckillStock">
+        UPDATE t_stock
+        SET locked_stock = locked_stock - #{quantity},
+            sold_count   = sold_count + #{quantity},
+            version      = version + 1,
+            updated_at   = NOW()
+        WHERE goods_id = #{goodsId}
+          AND locked_stock >= #{quantity}
+    </update>
 
 </mapper>

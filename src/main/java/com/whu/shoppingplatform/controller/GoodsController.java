@@ -2,7 +2,9 @@ package com.whu.shoppingplatform.controller;
 
 import com.whu.shoppingplatform.dto.ApiResponse;
 import com.whu.shoppingplatform.entity.Goods;
+import com.whu.shoppingplatform.service.GoodsSearchService;
 import com.whu.shoppingplatform.service.GoodsService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
@@ -13,9 +15,12 @@ import java.util.Map;
 public class GoodsController {
 
     private final GoodsService goodsService;
+    private final GoodsSearchService searchService;
 
-    public GoodsController(GoodsService goodsService) {
+    public GoodsController(GoodsService goodsService,
+                           @Autowired(required = false) GoodsSearchService searchService) {
         this.goodsService = goodsService;
+        this.searchService = searchService;
     }
 
     @GetMapping
@@ -63,6 +68,19 @@ public class GoodsController {
             return ApiResponse.success("删除商品成功", null);
         } catch (RuntimeException e) {
             return ApiResponse.error(400, e.getMessage());
+        }
+    }
+
+    @PostMapping("/reindex")
+    public ApiResponse<Void> reindex() {
+        if (searchService == null) {
+            return ApiResponse.error(503, "ES服务未启用");
+        }
+        try {
+            searchService.reindexAll();
+            return ApiResponse.success("ES索引重建成功", null);
+        } catch (Exception e) {
+            return ApiResponse.error(500, "ES索引重建失败: " + e.getMessage());
         }
     }
 }

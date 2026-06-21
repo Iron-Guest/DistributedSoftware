@@ -483,3 +483,129 @@ docker-compose logs backend2 | grep -c "GET\|POST"
 ### 6. 调整测试参数
 
 在 JMeter GUI 中修改各线程组的 `num_threads` (并发数) 和 `loops` (循环次数) 后重新运行。
+
+---
+
+## 十、动静分离压测
+
+### 测试计划
+
+`jmeter/static-vs-dynamic-test.jmx` 包含 3 个线程组：
+
+| 线程组 | 目标 | 并发 | 预期响应时间 |
+|--------|------|------|-------------|
+| 静态资源 (CSS/JS) | Nginx 直接返回，浏览器缓存 | 100×10 | < 5ms |
+| 后端 API (商品列表) | 经过 Nginx→后端→MySQL | 100×10 | 10-50ms |
+| 缓存命中 (商品详情) | Redis 缓存命中 | 100×10 | < 10ms |
+
+### 运行
+
+```bash
+jmeter -n -t jmeter/static-vs-dynamic-test.jmx -l static-dynamic.jtl -e -o report-static-dynamic/
+```
+
+### 验证动静分离
+
+```bash
+curl -I http://localhost/assets/index-CH4oDg2-.css | grep -i cache
+# 应看到: Cache-Control: public, immutable; Expires: (30天后)
+# 应看到: X-Static-Cache: HIT
+
+curl -I http://localhost/api/goods | grep -i cache
+# 应看到: Cache-Control: no-store; X-Dynamic: true
+```
+
+---
+
+## 十一、Redis 缓存 — 三大问题防护
+
+### 缓存穿透防护
+
+- **空值缓存**: 查询不存在的商品 ID 时，缓存 `__NULL__` 标记，TTL 5 分钟
+- 下次请求直接返回 null，不再穿透到数据库
+
+### 缓存击穿防护
+
+- **互斥锁**: 热点商品缓存过期时，使用 `SETNX` 获取分布式锁
+- 只有获取锁的线程去查 DB 重建缓存，其他线程自旋等待后重读缓存
+
+### 缓存雪崩防护
+
+- **随机 TTL**: 每个商品缓存的过期时间 = 基准 30 分钟 + 随机 0~10 分钟
+- 避免大量缓存在同一时刻同时过期
+
+### 缓存预热
+
+- `CacheWarmer` 在应用启动时自动加载所有商品到 Redis
+
+---
+
+## 十二、MySQL 读写分离
+
+### 架构
+
+```
+写请求 (@Transactional)  ──► mysql-master (3307)
+读请求 (@ReadOnly)       ──► mysql-slave  (3308)
+```
+
+### 实现原理
+
+- `AbstractRoutingDataSource` 根据 `ThreadLocal` 上下文切换数据源
+- `@ReadOnly` 注解标记的方法自动路由到从库
+- `@Transactional(readOnly=true)` 也路由到从库
+- `@Transactional` (默认) 路由到主库
+
+### 配置主从复制
+
+```bash
+# 1. 在主库创建复制用户
+docker exec -it seckill-mysql-master mysql -uroot -pabc123
+# 执行 mysql/setup-replication.sql 中的步骤 1-2
+
+# 2. 在从库配置复制
+docker exec -it seckill-mysql-slave mysql -uroot -pabc123
+# 执行 mysql/setup-replication.sql 中的步骤 3-4
+
+# 3. 验证
+SHOW SLAVE STATUS\G
+```
+
+### 验证读写分离
+
+```bash
+# 启动后端，查看日志中的 DataSourceRouter 输出
+docker-compose logs backend1 | grep "当前数据源"
+# 应看到: 查询走 slave，写入走 master
+```
+
+---
+
+## 十三、Elasticsearch 商品搜索
+
+### 架构
+
+- ES 索引: `goods` (单节点，开发模式)
+- 分词器: `ik_max_word` (索引) / `ik_smart` (搜索)
+- 搜索字段: `name` + `description`
+
+### 初始化索引
+
+```bash
+# 重建 ES 索引 (将 MySQL 商品数据同步到 ES)
+curl -X POST http://localhost/api/goods/reindex
+```
+
+### 搜索示例
+
+```bash
+# 搜索 "iPhone"
+curl "http://localhost/api/goods?keyword=iPhone"
+# 返回匹配的商品列表 (通过 ES 搜索)
+```
+
+### 数据同步
+
+- 新增商品 → 自动索引到 ES
+- 删除商品 → 自动从 ES 删除
+- 数据不一致时 → 调用 `POST /api/goods/reindex` 重建
