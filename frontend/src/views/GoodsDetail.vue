@@ -51,7 +51,7 @@ const handleBuy = async () => {
       quantity: 1
     })
     if (res.code === 200) {
-      ElMessage.success('抢购成功！')
+      ElMessage.success('抢购下单已提交，订单处理中...')
       fetchDetail()
     } else {
       ElMessage.error(res.message)

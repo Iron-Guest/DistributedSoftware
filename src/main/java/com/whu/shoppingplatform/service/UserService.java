@@ -1,11 +1,13 @@
 package com.whu.shoppingplatform.service;
 
+import com.whu.shoppingplatform.config.ReadOnly;
 import com.whu.shoppingplatform.dto.LoginRequest;
 import com.whu.shoppingplatform.dto.RegisterRequest;
 import com.whu.shoppingplatform.entity.User;
 import com.whu.shoppingplatform.mapper.UserMapper;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +22,7 @@ public class UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+    @Transactional
     public User register(RegisterRequest request) {
         User existingUser = userMapper.findByUsername(request.getUsername());
         if (existingUser != null) {
@@ -57,6 +60,7 @@ public class UserService {
         return user;
     }
 
+    @ReadOnly
     public User getUserById(Long id) {
         User user = userMapper.findById(id);
         if (user != null) {

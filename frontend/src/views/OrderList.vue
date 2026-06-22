@@ -1,6 +1,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getUserOrders, cancelOrder } from '../api/index.js'
+import { getUserOrders, payOrder, cancelOrder } from '../api/index.js'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 const orders = ref([])
@@ -27,6 +27,27 @@ const fetchOrders = async () => {
     ElMessage.error('加载订单列表失败')
   } finally {
     loading.value = false
+  }
+}
+
+const handlePay = async (order) => {
+  try {
+    await ElMessageBox.confirm(
+      `确定要支付订单 "${order.orderNo}" 吗？金额: ¥${order.totalAmount}`,
+      '确认支付',
+      { confirmButtonText: '确认支付', cancelButtonText: '取消', type: 'warning' }
+    )
+    const res = await payOrder(order.id)
+    if (res.code === 200) {
+      ElMessage.success('支付成功')
+      fetchOrders()
+    } else {
+      ElMessage.error(res.message)
+    }
+  } catch (e) {
+    if (e !== 'cancel') {
+      ElMessage.error('支付失败')
+    }
   }
 }
 
@@ -92,14 +113,24 @@ const formatTime = (time) => {
         </div>
         <div class="order-footer">
           <span class="order-time">{{ formatTime(order.createdAt) }}</span>
-          <el-button
-            v-if="order.status === 1"
-            type="danger"
-            size="small"
-            @click="handleCancel(order)"
-          >
-            取消订单
-          </el-button>
+          <div class="order-actions">
+            <el-button
+              v-if="order.status === 1"
+              type="success"
+              size="small"
+              @click="handlePay(order)"
+            >
+              立即支付
+            </el-button>
+            <el-button
+              v-if="order.status === 1"
+              type="danger"
+              size="small"
+              @click="handleCancel(order)"
+            >
+              取消订单
+            </el-button>
+          </div>
         </div>
       </div>
     </div>
@@ -182,5 +213,10 @@ const formatTime = (time) => {
 .order-time {
   font-size: 12px;
   color: #c0c4cc;
+}
+
+.order-actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

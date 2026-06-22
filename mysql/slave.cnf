@@ -1,9 +1,0 @@
-[mysqld]
-# 字符集配置
-character-set-server = utf8mb4
-collation-server = utf8mb4_unicode_ci
-
-server-id=2
-relay-log=mysql-relay-bin
-read-only=1
-replicate-do-db=shopping_platform

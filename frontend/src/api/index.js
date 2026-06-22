@@ -49,7 +49,7 @@ export function deleteGoods(id) {
 }
 
 export function createOrder(data) {
-  return api.post('/order', data)
+  return api.post('/order/seckill', data)
 }
 
 export function getOrderDetail(id) {
@@ -58,6 +58,10 @@ export function getOrderDetail(id) {
 
 export function getUserOrders(userId) {
   return api.get(`/order/user/${userId}`)
+}
+
+export function payOrder(id) {
+  return api.put(`/order/${id}/pay`)
 }
 
 export function cancelOrder(id) {

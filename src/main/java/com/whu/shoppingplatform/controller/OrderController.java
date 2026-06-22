@@ -25,16 +25,6 @@ public class OrderController {
         this.seckillService = seckillService;
     }
 
-    @PostMapping
-    public ApiResponse<Order> createOrder(@Valid @RequestBody CreateOrderRequest request) {
-        try {
-            Order order = orderService.createOrder(request.getUserId(), request.getGoodsId(), request.getQuantity());
-            return ApiResponse.success("抢购成功", order);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(400, e.getMessage());
-        }
-    }
-
     @PostMapping("/seckill")
     public ApiResponse<Map<String, Object>> seckill(@Valid @RequestBody CreateOrderRequest request) {
         if (seckillService == null) {
@@ -71,6 +61,16 @@ public class OrderController {
     public ApiResponse<List<Order>> listOrdersByUser(@PathVariable Long userId) {
         List<Order> orders = orderService.listOrdersByUserId(userId);
         return ApiResponse.success(orders);
+    }
+
+    @PutMapping("/{id}/pay")
+    public ApiResponse<Order> payOrder(@PathVariable Long id) {
+        try {
+            Order order = orderService.payOrder(id);
+            return ApiResponse.success("支付成功", order);
+        } catch (RuntimeException e) {
+            return ApiResponse.error(400, e.getMessage());
+        }
     }
 
     @PutMapping("/{id}/cancel")
