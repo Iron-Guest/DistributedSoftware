@@ -1,6 +1,5 @@
 package com.whu.shoppingplatform.service;
 
-import com.whu.shoppingplatform.config.ReadOnly;
 import com.whu.shoppingplatform.dto.LoginRequest;
 import com.whu.shoppingplatform.dto.RegisterRequest;
 import com.whu.shoppingplatform.entity.User;
@@ -60,7 +59,6 @@ public class UserService {
         return user;
     }
 
-    @ReadOnly
     public User getUserById(Long id) {
         User user = userMapper.findById(id);
         if (user != null) {

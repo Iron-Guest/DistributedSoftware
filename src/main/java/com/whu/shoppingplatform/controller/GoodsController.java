@@ -48,15 +48,32 @@ public class GoodsController {
     @PostMapping
     public ApiResponse<Goods> createGoods(@RequestBody Map<String, Object> request) {
         try {
-            String name = (String) request.get("name");
-            String description = (String) request.get("description");
-            BigDecimal price = request.get("price") != null ? new BigDecimal(request.get("price").toString()) : BigDecimal.ZERO;
-            String imageUrl = (String) request.get("imageUrl");
-            Integer stock = request.get("stock") != null ? Integer.parseInt(request.get("stock").toString()) : 0;
+            String name = request.get("name") != null ? request.get("name").toString() : null;
+            if (name == null || name.trim().isEmpty()) {
+                return ApiResponse.error(400, "商品名称不能为空");
+            }
+            String description = request.get("description") != null ? request.get("description").toString() : "";
+            BigDecimal price = BigDecimal.ZERO;
+            if (request.get("price") != null) {
+                try {
+                    price = new BigDecimal(request.get("price").toString());
+                } catch (NumberFormatException e) {
+                    return ApiResponse.error(400, "价格格式不正确");
+                }
+            }
+            String imageUrl = request.get("imageUrl") != null ? request.get("imageUrl").toString() : "";
+            Integer stock = 0;
+            if (request.get("stock") != null) {
+                try {
+                    stock = Integer.parseInt(request.get("stock").toString());
+                } catch (NumberFormatException e) {
+                    return ApiResponse.error(400, "库存数量格式不正确");
+                }
+            }
 
             Goods goods = goodsService.createGoods(name, description, price, imageUrl, stock);
             return ApiResponse.success("添加商品成功", goods);
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return ApiResponse.error(400, e.getMessage());
         }
     }

@@ -54,12 +54,20 @@
 
     <update id="confirmSeckillStock">
         UPDATE t_stock
-        SET locked_stock = locked_stock - #{quantity},
-            sold_count   = sold_count + #{quantity},
+        SET sold_count   = sold_count + #{quantity},
             version      = version + 1,
             updated_at   = NOW()
         WHERE goods_id = #{goodsId}
-          AND locked_stock >= #{quantity}
+          AND (total_stock - sold_count) >= #{quantity}
+    </update>
+
+    <update id="restoreStock">
+        UPDATE t_stock
+        SET sold_count   = sold_count - #{quantity},
+            version      = version + 1,
+            updated_at   = NOW()
+        WHERE goods_id = #{goodsId}
+          AND sold_count >= #{quantity}
     </update>
 
 </mapper>

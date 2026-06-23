@@ -6,7 +6,6 @@ import com.whu.shoppingplatform.entity.Order;
 import com.whu.shoppingplatform.service.OrderService;
 import com.whu.shoppingplatform.service.SeckillService;
 import jakarta.validation.Valid;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,21 +18,17 @@ public class OrderController {
     private final OrderService orderService;
     private final SeckillService seckillService;
 
-    public OrderController(OrderService orderService,
-                           @Autowired(required = false) SeckillService seckillService) {
+    public OrderController(OrderService orderService, SeckillService seckillService) {
         this.orderService = orderService;
         this.seckillService = seckillService;
     }
 
     @PostMapping("/seckill")
     public ApiResponse<Map<String, Object>> seckill(@Valid @RequestBody CreateOrderRequest request) {
-        if (seckillService == null) {
-            return ApiResponse.error(503, "秒杀服务未启用，请检查 Kafka 配置");
-        }
         try {
             Map<String, Object> result = seckillService.seckill(
                     request.getUserId(), request.getGoodsId(), request.getQuantity());
-            return ApiResponse.success("秒杀下单已提交，处理中", result);
+            return ApiResponse.success("下单成功", result);
         } catch (RuntimeException e) {
             return ApiResponse.error(400, e.getMessage());
         }

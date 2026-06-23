@@ -86,7 +86,7 @@ CREATE TABLE t_order (
     updated_at   DATETIME       DEFAULT CURRENT_TIMESTAMP
                                 ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     CONSTRAINT fk_order_user  FOREIGN KEY (user_id)  REFERENCES t_user(id),
-    CONSTRAINT fk_order_goods FOREIGN KEY (goods_id) REFERENCES t_goods(id)
+    CONSTRAINT fk_order_goods FOREIGN KEY (goods_id) REFERENCES t_goods(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='订单表';
 
 -- =====================================================
@@ -96,7 +96,6 @@ CREATE INDEX idx_order_user_id  ON t_order(user_id);
 CREATE INDEX idx_order_goods_id ON t_order(goods_id);
 CREATE INDEX idx_order_status   ON t_order(status);
 CREATE INDEX idx_order_created  ON t_order(created_at);
-CREATE UNIQUE INDEX idx_order_user_goods ON t_order(user_id, goods_id);
 CREATE INDEX idx_stock_goods_id ON t_stock(goods_id);
 
 -- =====================================================

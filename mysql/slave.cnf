@@ -1,0 +1,8 @@
+[mysqld]
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+
+server-id = 2
+relay-log = relay-bin
+read-only = 1
+log-slave-updates = 1

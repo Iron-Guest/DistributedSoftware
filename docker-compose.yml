@@ -50,7 +50,6 @@ services:
       - "3308:3306"
     volumes:
       - mysql-slave-data:/var/lib/mysql
-      - ./src/main/resources/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql
       - ./mysql/slave.cnf:/etc/mysql/conf.d/custom.cnf:ro
     depends_on:
       mysql-master:
@@ -59,7 +58,29 @@ services:
       - seckill-net
 
   # =====================================================
-  # 3. Redis 缓存
+  # 3. MySQL 主从复制初始化
+  # =====================================================
+  mysql-replication-setup:
+    image: mysql:8.0
+    container_name: seckill-replication-setup
+    restart: "no"
+    depends_on:
+      mysql-master:
+        condition: service_healthy
+      mysql-slave:
+        condition: service_started
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD:-abc123}
+      - MYSQL_MASTER_HOST=mysql-master
+      - MYSQL_SLAVE_HOST=mysql-slave
+    volumes:
+      - ./mysql/setup-replication.sh:/setup-replication.sh:ro
+    entrypoint: ["bash", "/setup-replication.sh"]
+    networks:
+      - seckill-net
+
+  # =====================================================
+  # 4. Redis 缓存
   # =====================================================
   redis:
     image: redis:7-alpine
@@ -79,7 +100,7 @@ services:
       - seckill-net
 
   # =====================================================
-  # 4. Zookeeper (Kafka 依赖)
+  # 5. Zookeeper (Kafka 依赖)
   # =====================================================
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
@@ -92,7 +113,7 @@ services:
       - seckill-net
 
   # =====================================================
-  # 5. Kafka 消息队列
+  # 6. Kafka 消息队列
   # =====================================================
   kafka:
     image: confluentinc/cp-kafka:7.6.0
@@ -120,7 +141,7 @@ services:
       - seckill-net
 
   # =====================================================
-  # 6. Elasticsearch 搜索引擎
+  # 7. Elasticsearch 搜索引擎
   # =====================================================
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
@@ -145,7 +166,7 @@ services:
       - seckill-net
 
   # =====================================================
-  # 7. 后端服务实例 1 (端口 8081)
+  # 8. 后端服务实例 1 (端口 8081)
   # =====================================================
   backend1:
     build:
@@ -154,10 +175,8 @@ services:
     container_name: seckill-backend-1
     restart: unless-stopped
     depends_on:
-      mysql-master:
-        condition: service_healthy
-      mysql-slave:
-        condition: service_started
+      mysql-replication-setup:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       kafka:
@@ -181,7 +200,7 @@ services:
       - seckill-net
 
   # =====================================================
-  # 8. 后端服务实例 2 (端口 8082)
+  # 9. 后端服务实例 2 (端口 8082)
   # =====================================================
   backend2:
     build:
@@ -190,10 +209,8 @@ services:
     container_name: seckill-backend-2
     restart: unless-stopped
     depends_on:
-      mysql-master:
-        condition: service_healthy
-      mysql-slave:
-        condition: service_started
+      mysql-replication-setup:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
       kafka:
@@ -217,7 +234,7 @@ services:
       - seckill-net
 
   # =====================================================
-  # 9. Nginx 反向代理 + 前端静态资源
+  # 10. Nginx 反向代理 + 前端静态资源
   # =====================================================
   nginx:
     image: nginx:alpine

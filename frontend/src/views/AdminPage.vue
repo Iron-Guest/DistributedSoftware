@@ -82,21 +82,30 @@ const handleDelete = async (row) => {
 
 const handleSubmit = async () => {
   if (!formRef.value) return
-  await formRef.value.validate(async (valid) => {
-    if (!valid) return
-    try {
-      const res = await createGoods(form.value)
-      if (res.code === 200) {
-        ElMessage.success('添加商品成功')
-        dialogVisible.value = false
-        fetchAll()
-      } else {
-        ElMessage.error(res.message)
-      }
-    } catch (e) {
-      ElMessage.error('操作失败')
+  try {
+    await formRef.value.validate()
+  } catch (e) {
+    return
+  }
+  const payload = {
+    name: form.value.name,
+    description: form.value.description || '',
+    price: Number(form.value.price),
+    imageUrl: form.value.imageUrl || '',
+    stock: Number(form.value.stock)
+  }
+  try {
+    const res = await createGoods(payload)
+    if (res.code === 200) {
+      ElMessage.success('添加商品成功')
+      dialogVisible.value = false
+      fetchAll()
+    } else {
+      ElMessage.error(res.message || '添加商品失败')
     }
-  })
+  } catch (e) {
+    ElMessage.error(e?.response?.data?.message || '操作失败')
+  }
 }
 
 const getAvailableStock = (goodsId) => {

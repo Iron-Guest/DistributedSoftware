@@ -1,10 +1,9 @@
 package com.whu.shoppingplatform.service;
 
-import com.whu.shoppingplatform.config.ReadOnly;
 import com.whu.shoppingplatform.entity.Order;
-import com.whu.shoppingplatform.entity.Stock;
 import com.whu.shoppingplatform.mapper.OrderMapper;
 import com.whu.shoppingplatform.mapper.StockMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,23 +14,23 @@ public class OrderService {
 
     private final OrderMapper orderMapper;
     private final StockMapper stockMapper;
+    private final RedisStockService redisStockService;
 
-    public OrderService(OrderMapper orderMapper, StockMapper stockMapper) {
+    public OrderService(OrderMapper orderMapper, StockMapper stockMapper,
+                        @Autowired(required = false) RedisStockService redisStockService) {
         this.orderMapper = orderMapper;
         this.stockMapper = stockMapper;
+        this.redisStockService = redisStockService;
     }
 
-    @ReadOnly
     public Order getOrderById(Long id) {
         return orderMapper.findById(id);
     }
 
-    @ReadOnly
     public Order getOrderByOrderNo(String orderNo) {
         return orderMapper.findByOrderNo(orderNo);
     }
 
-    @ReadOnly
     public List<Order> listOrdersByUserId(Long userId) {
         return orderMapper.findByUserId(userId);
     }
@@ -63,9 +62,14 @@ public class OrderService {
 
         orderMapper.updateStatus(orderId, 0, null);
 
-        Stock stock = stockMapper.findByGoodsId(order.getGoodsId());
-        if (stock != null) {
-            stockMapper.rollbackStock(order.getGoodsId(), order.getQuantity(), stock.getVersion());
+        stockMapper.restoreStock(order.getGoodsId(), order.getQuantity());
+
+        if (redisStockService != null) {
+            try {
+                redisStockService.restoreStock(order.getGoodsId(), order.getQuantity());
+                redisStockService.releaseIdempotent(order.getUserId(), order.getGoodsId());
+            } catch (Exception e) {
+            }
         }
     }
 }

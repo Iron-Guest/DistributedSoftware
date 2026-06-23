@@ -1,6 +1,5 @@
 package com.whu.shoppingplatform.service;
 
-import com.whu.shoppingplatform.config.ReadOnly;
 import com.whu.shoppingplatform.entity.Stock;
 import com.whu.shoppingplatform.mapper.StockMapper;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ public class StockService {
         this.stockMapper = stockMapper;
     }
 
-    @ReadOnly
     public Stock getStockByGoodsId(Long goodsId) {
         return stockMapper.findByGoodsId(goodsId);
     }

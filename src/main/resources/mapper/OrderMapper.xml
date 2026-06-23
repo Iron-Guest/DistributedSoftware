@@ -49,4 +49,8 @@
         </if>
     </update>
 
+    <delete id="deleteByGoodsId">
+        DELETE FROM t_order WHERE goods_id = #{goodsId}
+    </delete>
+
 </mapper>

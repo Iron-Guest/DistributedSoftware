@@ -18,4 +18,6 @@ public interface OrderMapper {
     int insert(Order order);
 
     int updateStatus(@Param("id") Long id, @Param("status") Integer status, @Param("version") Integer version);
+
+    int deleteByGoodsId(@Param("goodsId") Long goodsId);
 }

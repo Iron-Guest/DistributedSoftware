@@ -21,5 +21,7 @@ public interface StockMapper {
 
     int confirmSeckillStock(@Param("goodsId") Long goodsId, @Param("quantity") Integer quantity);
 
+    int restoreStock(@Param("goodsId") Long goodsId, @Param("quantity") Integer quantity);
+
     int deleteByGoodsId(@Param("goodsId") Long goodsId);
 }

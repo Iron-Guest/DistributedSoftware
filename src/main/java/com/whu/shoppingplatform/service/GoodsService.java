@@ -1,9 +1,9 @@
 package com.whu.shoppingplatform.service;
 
-import com.whu.shoppingplatform.config.ReadOnly;
 import com.whu.shoppingplatform.entity.Goods;
 import com.whu.shoppingplatform.entity.Stock;
 import com.whu.shoppingplatform.mapper.GoodsMapper;
+import com.whu.shoppingplatform.mapper.OrderMapper;
 import com.whu.shoppingplatform.mapper.StockMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,20 +20,25 @@ public class GoodsService {
 
     private final GoodsMapper goodsMapper;
     private final StockMapper stockMapper;
+    private final OrderMapper orderMapper;
     private final CacheService cacheService;
     private final GoodsSearchService searchService;
+    private final RedisStockService redisStockService;
 
     public GoodsService(GoodsMapper goodsMapper,
                         StockMapper stockMapper,
+                        OrderMapper orderMapper,
                         CacheService cacheService,
-                        @Autowired(required = false) GoodsSearchService searchService) {
+                        @Autowired(required = false) GoodsSearchService searchService,
+                        @Autowired(required = false) RedisStockService redisStockService) {
         this.goodsMapper = goodsMapper;
         this.stockMapper = stockMapper;
+        this.orderMapper = orderMapper;
         this.cacheService = cacheService;
         this.searchService = searchService;
+        this.redisStockService = redisStockService;
     }
 
-    @ReadOnly
     public Map<String, Object> listGoods(String keyword, int page, int size) {
         int offset = (page - 1) * size;
         List<Goods> list;
@@ -60,7 +65,6 @@ public class GoodsService {
         return result;
     }
 
-    @ReadOnly
     public Goods getGoodsById(Long id) {
         Goods goods = cacheService.getGoodsWithCache(id);
         if (goods == null) {
@@ -98,13 +102,15 @@ public class GoodsService {
 
         goods.setAvailableStock(stockQuantity);
 
+        if (redisStockService != null && stockQuantity != null && stockQuantity > 0) {
+            redisStockService.initStock(goods.getId(), stockQuantity);
+        }
+
         try {
             if (searchService != null) {
                 searchService.indexGoods(goods);
             }
-        } catch (Exception e) {
-            // ES 索引失败不影响主流程
-        }
+        } catch (Exception e) {}
 
         return goods;
     }
@@ -115,17 +121,22 @@ public class GoodsService {
         if (goods == null) {
             throw new RuntimeException("商品不存在");
         }
+        orderMapper.deleteByGoodsId(id);
         stockMapper.deleteByGoodsId(id);
         goodsMapper.deleteById(id);
 
         cacheService.evictGoodsCache(id);
 
+        if (redisStockService != null) {
+            try {
+                redisStockService.removeStock(id);
+            } catch (Exception e) {}
+        }
+
         try {
             if (searchService != null) {
                 searchService.deleteGoodsIndex(id);
             }
-        } catch (Exception e) {
-            // ES 删除失败不影响主流程
-        }
+        } catch (Exception e) {}
     }
 }
