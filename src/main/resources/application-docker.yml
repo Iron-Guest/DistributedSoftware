@@ -1,11 +1,13 @@
 # =====================================================
 # Docker 环境配置
-# 通过环境变量注入数据库/Redis/ES 连接信息
+# 通过环境变量注入数据库/Redis/ES/Nacos/Sentinel 连接信息
 # =====================================================
 server:
   port: ${SERVER_PORT:8080}
 
 spring:
+  application:
+    name: shopping-platform
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
@@ -42,6 +44,15 @@ spring:
       repositories:
         enabled: false
 
+  # Nacos 服务注册与配置 (由 bootstrap.yml 加载)
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:sentinel-dashboard:8080}
+        port: ${SENTINEL_PORT:8719}
+      eager: true
+      web-context-unify: false
+
 mybatis:
   mapper-locations: classpath:mapper/*Mapper.xml
   type-aliases-package: com.whu.shoppingplatform.entity
@@ -66,3 +77,7 @@ logging:
       retries: 3
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+
+seckill:
+  max-retry: 3
+  order-timeout-seconds: 900

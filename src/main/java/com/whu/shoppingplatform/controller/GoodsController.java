@@ -1,5 +1,7 @@
 package com.whu.shoppingplatform.controller;
 
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
 import com.whu.shoppingplatform.dto.ApiResponse;
 import com.whu.shoppingplatform.entity.Goods;
 import com.whu.shoppingplatform.service.GoodsSearchService;
@@ -24,6 +26,8 @@ public class GoodsController {
     }
 
     @GetMapping
+    @SentinelResource(value = "goods-query",
+            blockHandler = "goodsListBlockHandler")
     public ApiResponse<Map<String, Object>> listGoods(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -36,13 +40,23 @@ public class GoodsController {
         }
     }
 
+    public ApiResponse<Map<String, Object>> goodsListBlockHandler(int page, int size, String keyword, BlockException e) {
+        return ApiResponse.error(429, "商品查询请求过于频繁，请稍后再试");
+    }
+
     @GetMapping("/{id}")
+    @SentinelResource(value = "goods-query",
+            blockHandler = "goodsDetailBlockHandler")
     public ApiResponse<Goods> getGoods(@PathVariable Long id) {
         Goods goods = goodsService.getGoodsById(id);
         if (goods == null) {
             return ApiResponse.error(404, "商品不存在");
         }
         return ApiResponse.success(goods);
+    }
+
+    public ApiResponse<Goods> goodsDetailBlockHandler(Long id, BlockException e) {
+        return ApiResponse.error(429, "商品查询请求过于频繁，请稍后再试");
     }
 
     @PostMapping

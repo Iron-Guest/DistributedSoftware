@@ -1,6 +1,8 @@
 spring:
   profiles:
     active: dev
+  application:
+    name: shopping-platform
   autoconfigure:
     exclude:
       - org.springframework.boot.autoconfigure.elasticsearch.ElasticsearchClientAutoConfiguration
@@ -16,3 +18,15 @@ spring:
     view-names: /*
     cache: false
     prefix: /WEB-INF/html
+
+  cloud:
+    sentinel:
+      transport:
+        dashboard: ${SENTINEL_DASHBOARD:localhost:8080}
+        port: ${SENTINEL_PORT:8719}
+      eager: true
+      web-context-unify: false
+
+seckill:
+  max-retry: 3
+  order-timeout-seconds: 900
